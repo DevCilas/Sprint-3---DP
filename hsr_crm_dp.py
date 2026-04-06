@@ -1,7 +1,7 @@
 # =============================================================================
 # HOSPITAL SÃO RAFAEL — CRM DE VENDAS
 # Sprint 3 — Recursão e Memoização
-# Equipe: DataBase Builders - Grupo 6
+# Grupo 6
 # - Cilas Pinto Macedo - RM560745
 # - Ian Junji Maluvayshi Matsushita RM560588
 # - Pedro Arão Baquini - RM559580
@@ -11,7 +11,7 @@
 from functools import lru_cache
 
 # -----------------------------------------------------------------------------
-# DADOS DE EXEMPLO - Gerados por IA
+# DADOS DE EXEMPLO
 # -----------------------------------------------------------------------------
 
 cadastros = [
@@ -38,21 +38,26 @@ novos_leads = [
 # Caso base: lista percorrida sem encontrar duplicata.
 # =============================================================================
 
-def verificar_duplicidade(lead, lista, i=0):
+def verificar_duplicidade(lead: dict, lista: list, i: int = 0) -> tuple | None:
+    '''
+    Percorre a lista de cadastros de forma recursiva para encontrar duplicatas
+    baseadas em CPF, E-mail, Telefone ou Nome (ignorando letras maiúsculas e espaços).
+    '''
     # caso base: chegou ao fim sem encontrar duplicata
     if i == len(lista):
         return None
 
     c = lista[i]
 
-    if lead["cpf"] == c["cpf"]:
-        return ("CPF", c)
-    if lead["email"] == c["email"]:
-        return ("E-mail", c)
-    if lead["telefone"] == c["telefone"]:
-        return ("Telefone", c)
-    if lead["nome"].lower() == c["nome"].lower():
-        return ("Nome", c)
+    campos = ["cpf", "email", "telefone", "nome"]
+
+    for campo in campos:
+        # Usamos str() para evitar erro caso o campo venha como número (int)
+        v_lead = str(lead[campo]).lower().strip()
+        v_cad  = str(c[campo]).lower().strip()
+        
+        if v_lead == v_cad:
+            return (campo, c)
 
     return verificar_duplicidade(lead, lista, i + 1)
 
@@ -67,27 +72,39 @@ def verificar_duplicidade(lead, lista, i=0):
 
 cache = {}
 
-def comparar_com_cache(lead, cadastro):
-    chave = (lead["cpf"], lead["email"], cadastro["cpf"], cadastro["email"])
+def comparar_com_cache(lead: dict, cadastro: dict) -> str | None:
+    '''
+    Compara um lead com um cadastro específico usando um dicionário de cache (memoização). 
+    Retorna o primeiro campo que causou o conflito ou None se não houver duplicidade.
+    '''
+    chave = (
+        lead["cpf"], lead["email"], lead["telefone"], lead["nome"],
+        cadastro["cpf"], cadastro["email"], cadastro["telefone"], cadastro["nome"]
+    )
 
     if chave in cache:
         return cache[chave]  # retorna resultado salvo
 
     resultado = None
-    if lead["cpf"] == cadastro["cpf"]:
-        resultado = "CPF"
-    elif lead["email"] == cadastro["email"]:
-        resultado = "E-mail"
-    elif lead["telefone"] == cadastro["telefone"]:
-        resultado = "Telefone"
-    elif lead["nome"].lower() == cadastro["nome"].lower():
-        resultado = "Nome"
+    campos = ["cpf", "email", "telefone", "nome"]
+
+    for campo in campos:
+        v_lead = str(lead[campo]).lower().strip()
+        v_cad  = str(cadastro[campo]).lower().strip()
+
+        if v_lead == v_cad:
+            resultado = campo
+            break
 
     cache[chave] = resultado  # salva no cache
     return resultado
 
 
-def verificar_com_memoizacao(lead, lista, i=0):
+def verificar_com_memoizacao(lead: dict, lista: list, i: int = 0) -> tuple | None:
+    '''
+    Versão otimizada da verificação de duplicidade que utiliza a função de 
+    comparação com cache para evitar processamentos repetidos.
+    '''
     if i == len(lista):
         return None
 
@@ -108,7 +125,11 @@ def verificar_com_memoizacao(lead, lista, i=0):
 
 memo = {}
 
-def encaixar_consultas(consultas, slots, ic=0, isl=0, livre=None):
+def encaixar_consultas(consultas: list[int], slots: list[tuple[int, int]], ic: int = 0, isl: int = 0, livre: int | None = None) -> int:
+    '''
+    Calcula recursivamente a quantidade máxima de consultas que podem ser encaixadas 
+    nos slots do médico, usando memoização para não recalcular o mesmo cenário.
+    '''
     if ic == len(consultas) or isl == len(slots):
         return 0
 
